@@ -14,6 +14,7 @@ import java.util.List;
 
 import static com.example.greenhouse.constants.Constants.ERR_CLOSE_RESULT_SET;
 import static com.example.greenhouse.database.Constants.SQL_ERROR_MSG;
+import static com.example.greenhouse.nodes.Constants.NS_NODE_ID;
 import static com.example.greenhouse.sensors.Constants.SENSOR_TABLE;
 import static com.example.greenhouse.sensors.Constants.SENSOR_ID;
 import static com.example.greenhouse.sensors.Constants.SENSOR_NAME;
@@ -29,7 +30,9 @@ import static com.example.greenhouse.sensors.Constants.SENSOR_IMAGE_URL;
 import static com.example.greenhouse.sensors.Constants.SENSOR_DISABLED;
 import static com.example.greenhouse.sensors.Constants.SENSOR_LM_USER;
 import static com.example.greenhouse.sensors.Constants.SENSOR_LM_DATE_TIME;
+import static com.example.greenhouse.nodes.Constants.NS_TABLE;
 import static com.example.greenhouse.utils.MiscellaneousUtils.closeResultSet;
+import static com.example.greenhouse.utils.MiscellaneousUtils.encapFieldWithBackTick;
 
 public class SensorDbHandler {
 
@@ -51,6 +54,32 @@ public class SensorDbHandler {
 
         ResultSet resultSet = null;
         try (PreparedStatement ps = mysqlDbHandler.getConnection().prepareStatement(query)) {
+            resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                sensor = createSensor(resultSet);
+                sensors.add(sensor);
+            }
+            return sensors;
+        } catch (SQLException e) {
+            throw new MysqlHandlerException(String.format(SQL_ERROR_MSG, e.getSQLState(), e.getMessage()), e);
+        } catch (MysqlHandlerException e ) {
+            throw new MysqlHandlerException(e.getMessage(), e);
+        } finally {
+            closeResultSet(resultSet, ERR_CLOSE_RESULT_SET, logger);
+        }
+    }
+
+    public List<Sensor> getSensorsByNode(int nodeId) throws MysqlHandlerException {
+        List<Sensor> sensors = new ArrayList<>();
+        Sensor sensor = null;
+        String query = "SELECT * FROM " + SENSOR_TABLE + " WHERE " + encapFieldWithBackTick(SENSOR_ID)
+                + " IN ( SELECT " + SENSOR_ID + " FROM " +  NS_TABLE + " WHERE " + NS_NODE_ID + " = ? )";
+
+        System.out.println(query);
+        ResultSet resultSet = null;
+        try (PreparedStatement ps = mysqlDbHandler.getConnection().prepareStatement(query)) {
+            ps.setInt(1, nodeId);
             resultSet = ps.executeQuery();
 
             while (resultSet.next()) {

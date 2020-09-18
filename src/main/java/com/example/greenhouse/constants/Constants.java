@@ -9,6 +9,7 @@ public class Constants {
     public static final String MYSQL_DB_PASSWORD = "123456789";
 
     public static final String INTERNAL_SERVER_ERROR_MSG = "internal server error";
+    public static final String NOT_FOUND_MSG = "not found";
 
     public static final String ERR_CLOSE_RESULT_SET = "error occurred while closing the result set";
 }
